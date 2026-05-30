@@ -311,6 +311,16 @@ const AdminDashboard = () => {
                       <p className="stat-value">{users.length}</p>
                     </div>
                   </div>
+
+                  <div className="stat-card card">
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: '#f3e8ff', color: '#7c3aed' }}>
+                      <ShieldCheck size={24} />
+                    </div>
+                    <div className="stat-info">
+                      <h3>Paid Users</h3>
+                      <p className="stat-value">{users.filter(u => u.plan === 'pro').length}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -477,6 +487,7 @@ const AdminDashboard = () => {
                         <th>Account Name</th>
                         <th>Email Address</th>
                         <th>Platform Role</th>
+                        <th>Subscription Plan</th>
                         <th>Registered Date</th>
                         <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
@@ -489,6 +500,11 @@ const AdminDashboard = () => {
                           <td>
                             <span className={`badge ${u.role === 'admin' ? 'badge-danger' : 'badge-success'}`}>
                               {u.role}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge ${u.plan === 'pro' ? 'badge-primary' : 'badge-warning'}`} style={{ backgroundColor: u.plan === 'pro' ? '#7c3aed' : '', color: u.plan === 'pro' ? '#ffffff' : '' }}>
+                              {u.plan === 'pro' ? 'Paid User (Pro)' : 'Free User'}
                             </span>
                           </td>
                           <td>{formatDate(u.createdAt)}</td>
@@ -516,7 +532,7 @@ const AdminDashboard = () => {
           {activeTab === 'payments' && (
             <div>
               <div className="tab-title-row">
-                <h2>Payment Log Journal</h2>
+                <h2>Payment Logs</h2>
               </div>
 
               {loading ? (

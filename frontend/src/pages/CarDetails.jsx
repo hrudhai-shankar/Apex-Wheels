@@ -252,59 +252,30 @@ const CarDetails = () => {
                 <div className="form-group-horizontal">
                   <label className="form-label">
                     <Calendar size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />
-                    Pickup
+                    Pickup Date & Time
                   </label>
-                  <div className="datetime-inputs">
-                    <input
-                      type="date"
-                      className="form-input"
-                      min={getTodayString().split('T')[0]}
-                      value={startDate ? startDate.split('T')[0] : ''}
-                      onChange={(e) => {
-                        const time = startDate ? startDate.split('T')[1] : '10:00';
-                        setStartDate(`${e.target.value}T${time}`);
-                      }}
-                    />
-                    <input
-                      type="time"
-                      className="form-input time-input"
-                      value={startDate ? startDate.split('T')[1] : ''}
-                      onChange={(e) => {
-                        const date = startDate ? startDate.split('T')[0] : getTodayString().split('T')[0];
-                        setStartDate(`${date}T${e.target.value}`);
-                      }}
-                    />
-                  </div>
+                  <input
+                    type="datetime-local"
+                    className="form-input animate-fade-in"
+                    min={getTodayString()}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
                 </div>
 
                 <div className="form-group-horizontal">
                   <label className="form-label">
                     <Calendar size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />
-                    Drop-off
+                    Drop-off Date & Time
                   </label>
-                  <div className="datetime-inputs">
-                    <input
-                      type="date"
-                      className="form-input"
-                      min={startDate ? startDate.split('T')[0] : getTomorrowString().split('T')[0]}
-                      value={endDate ? endDate.split('T')[0] : ''}
-                      onChange={(e) => {
-                        const time = endDate ? endDate.split('T')[1] : '10:00';
-                        setEndDate(`${e.target.value}T${time}`);
-                      }}
-                      disabled={!startDate}
-                    />
-                    <input
-                      type="time"
-                      className="form-input time-input"
-                      value={endDate ? endDate.split('T')[1] : ''}
-                      onChange={(e) => {
-                        const date = endDate ? endDate.split('T')[0] : getTomorrowString().split('T')[0];
-                        setEndDate(`${date}T${e.target.value}`);
-                      }}
-                      disabled={!startDate}
-                    />
-                  </div>
+                  <input
+                    type="datetime-local"
+                    className="form-input animate-fade-in"
+                    min={startDate || getTomorrowString()}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    disabled={!startDate}
+                  />
                 </div>
 
                 <div className="booking-actions-horizontal">
