@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
+html, :root {
+  color-scheme: light only;
+}
+
 :root {
   --primary: hsl(38, 62%, 52%); /* Elegant Gold / Champagne */
   --primary-hover: hsl(38, 62%, 42%); /* Rich dark gold */

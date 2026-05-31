@@ -36,31 +36,20 @@ const AdminDashboard = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch Dashboard Data
+  // Fetch Dashboard Data - always load all for sidebar counts
   const fetchData = async () => {
     try {
       setLoading(true);
       setError('');
       
-        if (activeTab === 'analytics') {
-          const [carsData, bookingsData, usersData] = await Promise.all([
-            api.cars.getAll(),
-            api.bookings.getAllBookings(),
-            api.users.getAll()
-          ]);
-          setCars(carsData);
-          setBookings(bookingsData);
-          setUsers(usersData);
-        } else if (activeTab === 'cars') {
-          const data = await api.cars.getAll();
-          setCars(data);
-        } else if (activeTab === 'bookings' || activeTab === 'payments') {
-          const data = await api.bookings.getAllBookings();
-          setBookings(data);
-        } else if (activeTab === 'users') {
-          const data = await api.users.getAll();
-          setUsers(data);
-        }
+      const [carsData, bookingsData, usersData] = await Promise.all([
+        api.cars.getAll(),
+        api.bookings.getAllBookings(),
+        api.users.getAll()
+      ]);
+      setCars(carsData);
+      setBookings(bookingsData);
+      setUsers(usersData);
     } catch (err) {
       setError(err.message || 'Failed to fetch dashboard data.');
     } finally {
@@ -235,6 +224,7 @@ const AdminDashboard = () => {
           >
             <Car size={18} />
             <span>Manage Cars</span>
+            {cars.length > 0 && <span className="sidebar-count">{cars.length}</span>}
           </button>
           <button
             onClick={() => setActiveTab('bookings')}
@@ -242,6 +232,7 @@ const AdminDashboard = () => {
           >
             <Calendar size={18} />
             <span>View Bookings</span>
+            {bookings.length > 0 && <span className="sidebar-count">{bookings.length}</span>}
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -249,6 +240,7 @@ const AdminDashboard = () => {
           >
             <Users size={18} />
             <span>Manage Users</span>
+            {users.length > 0 && <span className="sidebar-count">{users.length}</span>}
           </button>
           <button
             onClick={() => setActiveTab('payments')}
@@ -256,6 +248,7 @@ const AdminDashboard = () => {
           >
             <ShieldCheck size={18} />
             <span>View Payments</span>
+            {bookings.filter(b => b.paymentStatus === 'Paid').length > 0 && <span className="sidebar-count sidebar-count-success">{bookings.filter(b => b.paymentStatus === 'Paid').length}</span>}
           </button>
         </aside>
 
@@ -832,6 +825,27 @@ const AdminDashboard = () => {
         .admin-side-btn.active {
           background-color: var(--primary-light);
           color: var(--primary);
+        }
+        .sidebar-count {
+          margin-left: auto;
+          background-color: var(--dark);
+          color: var(--bg-white);
+          font-size: 0.7rem;
+          font-weight: 700;
+          min-width: 22px;
+          height: 22px;
+          border-radius: var(--radius-full);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 6px;
+        }
+        .admin-side-btn.active .sidebar-count {
+          background-color: var(--primary);
+          color: var(--bg-white);
+        }
+        .sidebar-count-success {
+          background-color: var(--success) !important;
         }
         
         .admin-main {

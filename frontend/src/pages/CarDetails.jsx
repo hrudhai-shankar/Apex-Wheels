@@ -35,12 +35,17 @@ const CarDetails = () => {
   const [totalDays, setTotalDays] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [bookingError, setBookingError] = useState('');
+  const [carBookings, setCarBookings] = useState([]);
 
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
-        const data = await api.cars.getById(id);
-        setCar(data);
+        const [carData, bookingsData] = await Promise.all([
+          api.cars.getById(id),
+          api.bookings.getCarBookings(id).catch(() => []) // Fallback to empty if fails
+        ]);
+        setCar(carData);
+        setCarBookings(bookingsData);
       } catch (err) {
         setError(err.message || 'Car details could not be loaded.');
       } finally {
@@ -49,6 +54,25 @@ const CarDetails = () => {
     };
     fetchCarDetails();
   }, [id]);
+
+  const handlePickupChange = (newPickup) => {
+    setStartDate(newPickup);
+    
+    const userPlan = user?.plan || 'free';
+    if (userPlan === 'free') {
+      const pickupDate = new Date(newPickup);
+      if (!isNaN(pickupDate.getTime())) {
+        const dropoffDate = new Date(pickupDate.getTime() + 12 * 60 * 60 * 1000);
+        // Format to YYYY-MM-DDTHH:MM
+        const yyyy = dropoffDate.getFullYear();
+        const mm = String(dropoffDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(dropoffDate.getDate()).padStart(2, '0');
+        const hh = String(dropoffDate.getHours()).padStart(2, '0');
+        const min = String(dropoffDate.getMinutes()).padStart(2, '0');
+        setEndDate(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+      }
+    }
+  };
 
   // Recalculate duration & price in real-time when dates change
   useEffect(() => {
@@ -63,6 +87,20 @@ const CarDetails = () => {
         return;
       }
       
+      // Check schedule overlaps
+      const overlap = carBookings.some((b) => {
+        const bStart = new Date(b.startDate);
+        const bEnd = new Date(b.endDate);
+        return start < bEnd && end > bStart;
+      });
+
+      if (overlap) {
+        setBookingError('This car is already booked/scheduled during these times.');
+        setTotalDays(0);
+        setTotalAmount(0);
+        return;
+      }
+
       setBookingError('');
       const diffTime = Math.abs(end - start);
       const hours = diffTime / (1000 * 60 * 60);
@@ -70,7 +108,7 @@ const CarDetails = () => {
 
       const userPlan = user?.plan || 'free';
       
-      if (userPlan === 'free' && hours > 12) {
+      if (userPlan === 'free' && hours > 12.01) { // small floating point tolerance
         setBookingError('Free plan allows a maximum rental of 12 hours. Please upgrade to Pro.');
         setTotalDays(0);
         setTotalAmount(0);
@@ -91,20 +129,22 @@ const CarDetails = () => {
       setTotalAmount(0);
       setBookingError('');
     }
-  }, [startDate, endDate, car]);
+  }, [startDate, endDate, car, carBookings, user]);
 
   const handleBookingSubmit = (e) => {
     e.preventDefault();
 
     if (!user) {
-      // Redirect to login page and preserve checkout state if desired,
-      // but standard simple login redirect is highly beginner friendly
       navigate('/login');
       return;
     }
 
     if (!startDate || !endDate) {
       setBookingError('Please select both Pickup and Drop-off dates');
+      return;
+    }
+
+    if (bookingError) {
       return;
     }
 
@@ -252,30 +292,71 @@ const CarDetails = () => {
                 <div className="form-group-horizontal">
                   <label className="form-label">
                     <Calendar size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />
-                    Pickup Date & Time
+                    Pickup Date
                   </label>
-                  <input
-                    type="datetime-local"
-                    className="form-input animate-fade-in"
-                    min={getTodayString()}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="date"
+                      className="form-input"
+                      min={getTodayString().split('T')[0]}
+                      value={startDate ? startDate.split('T')[0] : ''}
+                      onChange={(e) => {
+                        const time = startDate ? startDate.split('T')[1] : '10:00';
+                        handlePickupChange(`${e.target.value}T${time}`);
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={startDate ? startDate.split('T')[1] : ''}
+                      onChange={(e) => {
+                        const date = startDate ? startDate.split('T')[0] : getTodayString().split('T')[0];
+                        handlePickupChange(`${date}T${e.target.value}`);
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group-horizontal">
                   <label className="form-label">
                     <Calendar size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />
-                    Drop-off Date & Time
+                    Drop-off Date {user?.plan === 'free' ? '(Auto-Calculated 12h)' : ''}
                   </label>
-                  <input
-                    type="datetime-local"
-                    className="form-input animate-fade-in"
-                    min={startDate || getTomorrowString()}
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    disabled={!startDate}
-                  />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="date"
+                      className="form-input"
+                      min={startDate ? startDate.split('T')[0] : getTodayString().split('T')[0]}
+                      max={user?.plan === 'pro' && startDate ? (() => {
+                        const pickup = new Date(startDate);
+                        pickup.setDate(pickup.getDate() + 7);
+                        const yyyy = pickup.getFullYear();
+                        const mm = String(pickup.getMonth() + 1).padStart(2, '0');
+                        const dd = String(pickup.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                      })() : undefined}
+                      value={endDate ? endDate.split('T')[0] : ''}
+                      onChange={(e) => {
+                        const time = endDate ? endDate.split('T')[1] : '10:00';
+                        setEndDate(`${e.target.value}T${time}`);
+                      }}
+                      disabled={!startDate || user?.plan === 'free'}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      type="time"
+                      className="form-input"
+                      value={endDate ? endDate.split('T')[1] : ''}
+                      onChange={(e) => {
+                        const date = endDate ? endDate.split('T')[0] : '';
+                        if (date) setEndDate(`${date}T${e.target.value}`);
+                      }}
+                      disabled={!startDate || user?.plan === 'free'}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
                 </div>
 
                 <div className="booking-actions-horizontal">

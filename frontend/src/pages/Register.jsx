@@ -158,34 +158,6 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Admin Role Optional Field */}
-          <div className="admin-toggle-section">
-            <button
-              type="button"
-              className="admin-toggle-btn"
-              onClick={() => setShowAdminField(!showAdminField)}
-            >
-              <Key size={14} />
-              <span>{showAdminField ? 'Hide' : 'Reveal'} Admin Registration</span>
-            </button>
-            
-            {showAdminField && (
-              <div className="form-group admin-field-group animate-fade-in">
-                <label className="form-label" htmlFor="adminSecret">Admin Secret Key</label>
-                <input
-                  type="password"
-                  id="adminSecret"
-                  name="adminSecret"
-                  className="form-input"
-                  placeholder="Enter secret to register as admin"
-                  value={formData.adminSecret}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </div>
-            )}
-          </div>
-
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? 'Creating Account...' : 'Register'}
             {!loading && <ArrowRight size={18} />}

@@ -17,6 +17,7 @@ import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import MyBookings from './pages/MyBookings';
 import AdminDashboard from './pages/AdminDashboard';
+import GoPro from './pages/GoPro';
 
 function App() {
   return (
@@ -50,6 +51,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MyBookings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/go-pro" 
+                element={
+                  <ProtectedRoute>
+                    <GoPro />
                   </ProtectedRoute>
                 } 
               />

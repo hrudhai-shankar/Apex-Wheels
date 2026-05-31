@@ -24,12 +24,13 @@ const verifyToken = async (req, res, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
+    const { getUserPlan } = require('../utils/userPlanRegistry');
     
     // Query users table from Supabase with fallback to JWT info if DB fails
     try {
       const { data: user, error } = await supabase
         .from('users')
-        .select('id, name, email, role, plan, created_at')
+        .select('id, name, email, role, created_at')
         .eq('id', decoded.id)
         .single();
 
@@ -37,7 +38,7 @@ const verifyToken = async (req, res, next) => {
         req.user = {
           id: decoded.id,
           role: decoded.role || 'user',
-          plan: decoded.plan || 'free',
+          plan: getUserPlan(decoded.id),
           name: decoded.name || 'User ' + decoded.id,
           email: decoded.email || 'user@example.com'
         };
@@ -47,7 +48,7 @@ const verifyToken = async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          plan: user.plan || 'free',
+          plan: getUserPlan(user.id),
           createdAt: user.created_at
         };
       }
@@ -56,7 +57,7 @@ const verifyToken = async (req, res, next) => {
       req.user = {
         id: decoded.id,
         role: decoded.role || 'user',
-        plan: decoded.plan || 'free',
+        plan: getUserPlan(decoded.id),
         name: 'User ' + decoded.id,
         email: 'user@example.com'
       };

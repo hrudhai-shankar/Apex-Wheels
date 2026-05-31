@@ -95,6 +95,7 @@ const api = {
     }),
     getMyBookings: () => request('/bookings/my-bookings'),
     getAllBookings: () => request('/bookings'),
+    getCarBookings: (carId) => request(`/bookings/car/${carId}`),
   },
 
   users: {

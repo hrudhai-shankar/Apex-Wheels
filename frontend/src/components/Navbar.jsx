@@ -45,7 +45,7 @@ const Navbar = () => {
             <Link to="/" className={`nav-link ${isActive('/')}`}>Home</Link>
             <Link to="/cars" className={`nav-link ${isActive('/cars')}`}>Browse Cars</Link>
             
-            {user && (
+            {user && user.role !== 'admin' && (
               <Link to="/my-bookings" className={`nav-link ${isActive('/my-bookings')}`}>
                 <Calendar size={18} />
                 My Bookings
@@ -61,14 +61,14 @@ const Navbar = () => {
           </div>
 
           <div className="nav-actions-wrapper desktop-auth">
-            {user && (!user.plan || user.plan === 'free') && (
-              <button 
-                onClick={() => setSubscriptionModalOpen(true)} 
+            {user && user.role !== 'admin' && (!user.plan || user.plan === 'free') && (
+              <Link 
+                to="/go-pro" 
                 className="btn btn-sm" 
-                style={{ backgroundColor: '#fbbf24', color: '#000', gap: '0.35rem', fontWeight: 700 }}
+                style={{ backgroundColor: '#fbbf24', color: '#000', gap: '0.35rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}
               >
                 <Crown size={16} /> Go Pro
-              </button>
+              </Link>
             )}
 
             {/* Wishlist Icon */}
@@ -128,7 +128,7 @@ const Navbar = () => {
             <Link to="/" className={`mobile-link ${isActive('/')}`} onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link to="/cars" className={`mobile-link ${isActive('/cars')}`} onClick={() => setMobileMenuOpen(false)}>Browse Cars</Link>
             
-            {user && (
+            {user && user.role !== 'admin' && (
               <Link to="/my-bookings" className={`mobile-link ${isActive('/my-bookings')}`} onClick={() => setMobileMenuOpen(false)}>
                 My Bookings
               </Link>
@@ -141,14 +141,15 @@ const Navbar = () => {
             )}
 
             <div className="mobile-auth-section">
-              {user && (!user.plan || user.plan === 'free') && (
-                <button 
-                  onClick={() => { setSubscriptionModalOpen(true); setMobileMenuOpen(false); }} 
+              {user && user.role !== 'admin' && (!user.plan || user.plan === 'free') && (
+                <Link 
+                  to="/go-pro" 
+                  onClick={() => setMobileMenuOpen(false)}
                   className="btn btn-full" 
-                  style={{ backgroundColor: '#fbbf24', color: '#000', marginBottom: '1rem', fontWeight: 700, gap: '0.35rem' }}
+                  style={{ backgroundColor: '#fbbf24', color: '#000', marginBottom: '1rem', fontWeight: 700, gap: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Crown size={18} /> Go Pro Upgrade
-                </button>
+                </Link>
               )}
               {user ? (
                 <div className="mobile-user-info">

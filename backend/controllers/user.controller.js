@@ -12,7 +12,7 @@ exports.getAllUsers = async (req, res) => {
       // Return all users, excluding passwords
       const { data, error: dbErr } = await supabase
         .from('users')
-        .select('id, name, email, role, plan, created_at')
+        .select('id, name, email, role, created_at')
         .order('created_at', { ascending: false });
       
       users = data;
@@ -21,14 +21,24 @@ exports.getAllUsers = async (req, res) => {
       error = dbErr;
     }
 
-    if (error || !users || users.length === 0) {
-      console.log('Database query failed/empty for users list, falling back to mock user registry.');
-      users = [
-        { id: 'admin_bypass_id', name: 'System Admin', email: 'admin@apexwheels.com', role: 'admin', plan: 'pro', created_at: new Date().toISOString() },
-        { id: 1, name: 'John Doe', email: 'john@example.com', role: 'user', plan: 'free', created_at: new Date(Date.now() - 86400000 * 5).toISOString() },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'user', plan: 'pro', created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-      ];
+    if (error) {
+      console.log('Database query failed for users list:', error.message);
+      // Try without plan column as fallback
+      try {
+        const { data, error: dbErr2 } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!dbErr2 && data) {
+          users = data;
+          error = null;
+        }
+      } catch (e) {
+        // Final fallback
+      }
     }
+
+    if (!users) users = [];
 
     // Map `id` to `_id` to preserve frontend properties
     const mappedUsers = users.map((u) => ({

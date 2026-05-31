@@ -167,7 +167,7 @@ exports.createBookingOrder = async (req, res) => {
         .from('bookings')
         .select('*')
         .eq('car_id', carId)
-        .eq('status', 'Confirmed')
+        .neq('status', 'Cancelled')
         .lte('start_date', end.toISOString())
         .gte('end_date', start.toISOString());
 
@@ -177,7 +177,7 @@ exports.createBookingOrder = async (req, res) => {
       // Local overlap validation
       const overlap = localBookings.filter(b => 
         b.car_id.toString() === carId.toString() &&
-        b.status === 'Confirmed' &&
+        b.status !== 'Cancelled' &&
         new Date(b.start_date) <= end &&
         new Date(b.end_date) >= start
       );
@@ -523,3 +523,37 @@ exports.getAllBookings = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// @desc    Get all bookings for a specific car (Public/User)
+// @route   GET /api/bookings/car/:carId
+// @access  Public
+exports.getCarBookings = async (req, res) => {
+  try {
+    const { carId } = req.params;
+    let bookings = [];
+    let error = null;
+
+    try {
+      const { data, error: dbErr } = await supabase
+        .from('bookings')
+        .select('*, car:cars(*)')
+        .eq('car_id', carId)
+        .neq('status', 'Cancelled');
+
+      bookings = data || [];
+      error = dbErr;
+    } catch (dbErr) {
+      error = dbErr;
+    }
+
+    if (error || !bookings || bookings.length === 0) {
+      bookings = localBookings.filter(b => b.car_id.toString() === carId.toString() && b.status !== 'Cancelled');
+    }
+
+    res.json(bookings.map(mapBooking));
+  } catch (error) {
+    console.error('Get car bookings error:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+

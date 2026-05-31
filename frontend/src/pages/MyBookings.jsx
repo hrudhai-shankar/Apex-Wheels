@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import api from '../utils/api';
 import { Calendar, CreditCard, ChevronRight, AlertCircle, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const MyBookings = () => {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  if (user && user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
 
   const fetchMyBookings = async () => {
     try {

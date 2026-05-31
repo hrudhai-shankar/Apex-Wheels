@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const supabase = require('../supabase');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const { getUserPlan, setUserPlan } = require('../utils/userPlanRegistry');
 
 const getRazorpayInstance = () => {
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -84,7 +85,7 @@ exports.registerUser = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        plan: newUser.plan || 'free',
+        plan: getUserPlan(newUser.id),
         token: generateToken(newUser.id, newUser.role),
       });
     } else {
@@ -134,7 +135,7 @@ exports.loginUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      plan: user.plan || 'free',
+      plan: getUserPlan(user.id),
       token: generateToken(user.id, user.role),
     });
   } catch (error) {
@@ -155,7 +156,7 @@ exports.getProfile = async (req, res) => {
         name: req.user.name,
         email: req.user.email,
         role: req.user.role,
-        plan: req.user.plan || 'free',
+        plan: getUserPlan(req.user.id),
         created_at: req.user.created_at
       });
     } else {
@@ -215,18 +216,20 @@ exports.verifyUpgrade = async (req, res) => {
 
     // Verify mock mode
     if (razorpayOrderId.startsWith('mock_upgrade_')) {
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update({ plan: 'pro' })
-        .eq('id', userId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
+      try {
+        await supabase
+          .from('users')
+          .update({ plan: 'pro' })
+          .eq('id', userId);
+      } catch (dbErr) {
+        console.warn('Could not update plan to database users table, updating registry fallback:', dbErr.message);
+      }
+      
+      setUserPlan(userId, 'pro');
       
       return res.json({ 
         message: 'Upgraded to Pro successfully (Mock Mode)!',
-        plan: updatedUser.plan
+        plan: 'pro'
       });
     }
 
@@ -236,24 +239,26 @@ exports.verifyUpgrade = async (req, res) => {
     const generatedSignature = hmac.digest('hex');
 
     if (generatedSignature === razorpaySignature) {
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update({ plan: 'pro' })
-        .eq('id', userId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
+      try {
+        await supabase
+          .from('users')
+          .update({ plan: 'pro' })
+          .eq('id', userId);
+      } catch (dbErr) {
+        console.warn('Could not update plan to database users table, updating registry fallback:', dbErr.message);
+      }
+      
+      setUserPlan(userId, 'pro');
       
       res.json({ 
         message: 'Payment verified and upgraded to Pro successfully!',
-        plan: updatedUser.plan
+        plan: 'pro'
       });
     } else {
       res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
     }
   } catch (error) {
-    console.error('Verify upgrade error:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Verify upgrade error:', error);
+    res.status(500).json({ message: `Verify upgrade error: ${error.message}`, error: error.stack });
   }
 };
